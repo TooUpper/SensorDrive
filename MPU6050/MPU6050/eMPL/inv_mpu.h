@@ -20,7 +20,7 @@
 
 #ifndef _INV_MPU_H_
 #define _INV_MPU_H_
-#include "sys.h"
+#include "stm32f10x.h"
 
 //定义输出速度
 #define DEFAULT_MPU_HZ  (100)		//100Hz
@@ -31,6 +31,16 @@
 #define INV_XYZ_GYRO    (INV_X_GYRO | INV_Y_GYRO | INV_Z_GYRO)
 #define INV_XYZ_ACCEL   (0x08)
 #define INV_XYZ_COMPASS (0x01)
+
+#ifndef u8
+#define u8 uint8_t
+#endif
+#ifndef u16
+#define u16 uint16_t
+#endif
+#ifndef u32
+#define u32 uint32_t
+#endif
 
 //移植官方MSP430 DMP驱动过来
 struct int_param_s {

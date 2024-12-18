@@ -24,13 +24,12 @@
 #include <math.h>
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
-#include "mpu6050.h"
-#include "delay.h"
-#include "usart.h"
+#include "bsp_mpu6050.h"
+#include "board.h"
 
 
 #define MPU6050							//定义我们使用的传感器为MPU6050
-#define MOTION_DRIVER_TARGET_MSP430		//定义驱动部分,采用MSP430的驱动(移植到STM32F1)
+#define MOTION_DRIVER_TARGET_MSP430		//定义驱动部分,采用MSP430的驱动(移植到STM32F4)
 
 /* The following functions must be defined for this platform:
  * i2c_write(unsigned char slave_addr, unsigned char reg_addr,
@@ -50,9 +49,8 @@
 //#include "msp430_clock.h"
 //#include "msp430_interrupt.h"
 
-#define i2c_write   MPU_Write_Len
-#define i2c_read    MPU_Read_Len
-#define delay_ms    delay_ms
+#define i2c_write   MPU6050_WriteReg
+#define i2c_read    MPU6050_ReadData
 #define get_ms      mget_ms
 //static inline int reg_int_cb(struct int_param_s *int_param)
 //{
@@ -762,7 +760,6 @@ int mpu_read_reg(unsigned char reg, unsigned char *data)
 int mpu_init(void)
 {
     unsigned char data[6], rev;
-
     /* Reset device. */
     data[0] = BIT_RESET;
     if (i2c_write(st.hw->addr, st.reg->pwr_mgmt_1, 1, data))
@@ -915,8 +912,7 @@ int mpu_lp_accel_mode(unsigned char rate)
      */
     mpu_set_int_latched(1);
 #if defined MPU6050
-    //tmp[0] = BIT_LPA_CYCLE;
-		tmp[0] = 0x28;
+    tmp[0] = BIT_LPA_CYCLE;
     if (rate == 1) {
         tmp[1] = INV_LPA_1_25HZ;
         mpu_set_lpf(5);
@@ -2852,20 +2848,6 @@ lp_int_restore:
     st.chip_cfg.int_motion_only = 0;
     return 0;
 }
-//////////////////////////////////////////////////////////////////////////////////
-//添加的代码部分 
-//////////////////////////////////////////////////////////////////////////////////	 
-//本程序只供学习使用，未经作者许可，不得用于其它任何用途
-//ALIENTEK精英STM32开发板V3
-//MPU6050 DMP 驱动代码	   
-//正点原子@ALIENTEK
-//技术论坛:www.openedv.com
-//创建日期:2015/1/17
-//版本：V1.0
-//版权所有，盗版必究。
-//Copyright(C) 广州市星翼电子科技有限公司 2009-2019
-//All rights reserved									  
-////////////////////////////////////////////////////////////////////////////////// 
 
 //q30格式,long转float时的除数.
 #define q30  1073741824.0f
@@ -2956,30 +2938,33 @@ void mget_ms(unsigned long *time)
 u8 mpu_dmp_init(void)
 {
 	u8 res=0;
-	MPU_Bus_Init();
-	if(mpu_init()==0)//初始化MPU6050
-	{	
-		res = mpu_lp_accel_mode(20);
-		if(res)return -1; 
-		//res=mpu_set_sensors(INV_XYZ_ACCEL);//设置所需要的传感器
-		//if(res)return 1; 
-		res=mpu_configure_fifo(INV_XYZ_ACCEL);//设置FIFO
+    
+    res = mpu_init();
+//    printf("res = %d\r\n",res);
+	if(res==0)	//初始化MPU6050
+	{	 
+		res=mpu_set_sensors(INV_XYZ_GYRO|INV_XYZ_ACCEL);//设置所需要的传感器
+		if(res)return 1; 
+		res=mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);//设置FIFO
 		if(res)return 2; 
 		res=mpu_set_sample_rate(DEFAULT_MPU_HZ);	//设置采样率
 		if(res)return 3; 
 		res=dmp_load_motion_driver_firmware();		//加载dmp固件
 		if(res)return 4; 
-		//res=dmp_set_orientation(inv_orientation_matrix_to_scalar(gyro_orientation));//设置陀螺仪方向
-		//if(res)return 5; 
-		res=dmp_enable_feature(DMP_FEATURE_TAP| DMP_FEATURE_SEND_RAW_ACCEL| DMP_FEATURE_PEDOMETER);//设置dmp功能
+		res=dmp_set_orientation(inv_orientation_matrix_to_scalar(gyro_orientation));//设置陀螺仪方向
+		if(res)return 5; 
+		res=dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_TAP|	//设置dmp功能
+		    DMP_FEATURE_ANDROID_ORIENT|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_SEND_CAL_GYRO|
+		    DMP_FEATURE_GYRO_CAL);
 		if(res)return 6; 
 		res=dmp_set_fifo_rate(DEFAULT_MPU_HZ);	//设置DMP输出速率(最大不超过200Hz)
-		if(res)return 7;   
-		//res=run_self_test();		//自检
-		//if(res)return 8;    
+		if(res)return 7;           
+//		res=run_self_test();		//自检
+//		if(res)return 8;          
 		res=mpu_set_dmp_state(1);	//使能DMP
-		if(res)return 9; 
-	}else return 10;
+		if(res)return 9;     
+	}
+    
 	return 0;
 }
 //得到dmp处理后的数据(注意,本函数需要比较多堆栈,局部变量有点多)

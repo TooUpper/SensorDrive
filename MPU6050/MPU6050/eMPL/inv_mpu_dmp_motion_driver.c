@@ -23,8 +23,7 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "dmpKey.h"
 #include "dmpmap.h"
-#include "usart.h"
-#include "delay.h"
+#include "board.h"
 
 //定义目标板采用MSP430
 #define  MOTION_DRIVER_TARGET_MSP430
@@ -40,7 +39,7 @@
 #if defined MOTION_DRIVER_TARGET_MSP430
 //#include "msp430.h"
 //#include "msp430_clock.h"
-#define delay_ms    delay_ms
+#define delay_ms    delay_1ms
 #define get_ms      mget_ms
 #define log_i 		printf
 #define log_e  		printf

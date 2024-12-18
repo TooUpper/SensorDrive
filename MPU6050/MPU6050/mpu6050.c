@@ -1,464 +1,453 @@
-#include "mpu6050.h"
+/*
+ * Á¢´´¿ª·¢°åÈíÓ²¼ş×ÊÁÏÓëÏà¹ØÀ©Õ¹°åÈíÓ²¼ş×ÊÁÏ¹ÙÍøÈ«²¿¿ªÔ´
+ * ¿ª·¢°å¹ÙÍø£ºwww.lckfb.com
+ * ¼¼ÊõÖ§³Ö³£×¤ÂÛÌ³£¬ÈÎºÎ¼¼ÊõÎÊÌâ»¶Ó­ËæÊ±½»Á÷Ñ§Ï°
+ * Á¢´´ÂÛÌ³£ºhttps://oshwhub.com/forum
+ * ¹Ø×¢bilibiliÕËºÅ£º¡¾Á¢´´¿ª·¢°å¡¿£¬ÕÆÎÕÎÒÃÇµÄ×îĞÂ¶¯Ì¬£¡
+ * ²»¿¿Âô°å×¬Ç®£¬ÒÔÅàÑøÖĞ¹ú¹¤³ÌÊ¦Îª¼ºÈÎ
+ * Change Logs:
+ * Date           Author       Notes
+ * 2024-03-29     LCKFB-LP    first version
+ */
 
-#define MPU_INT_PORT GPIOB
-#define MPU_INT_PIN  GPIO_PIN_12
+#include "bsp_mpu6050.h"
+#include "stdio.h"
+#include "board.h"
 
-#define CLK_ENABLE __HAL_RCC_GPIOB_CLK_ENABLE();
 
-iic_bus_t MPU_bus = 
+
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050_GPIO_Init
+ * º¯ Êı Ëµ Ã÷£ºMPU6050µÄÒı½Å³õÊ¼»¯
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£ºÎŞ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+void MPU6050_GPIO_Init(void)
 {
-	.IIC_SDA_PORT = GPIOB,
-	.IIC_SCL_PORT = GPIOB,
-	.IIC_SDA_PIN  = GPIO_PIN_13,
-	.IIC_SCL_PIN  = GPIO_PIN_14,
-};
-
-
-/**************************************************************************/
-/*!
-    @brief  initialize the iic port connect with MPU6050
-
-    @param  NULL
-*/
-/**************************************************************************/
-void MPU_INT_Pin_Init()
-{
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pin : PB12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-}
-
-
-/**************************************************************************/
-/*!
-    @brief  initialize the motion function of MPU6050
-
-    @param  NULL
-*/
-/**************************************************************************/
-void MPU_Motion_Init(void)			
-{
-    MPU_Write_Byte(MPU_MOTION_DET_REG,0x01);    //set the acceleration threshold is (LSB*2)mg
-    MPU_Write_Byte(MPU_MOTION_DUR_REG,0x01);    //Acceleration detection time is ()ms 
-    MPU_Write_Byte(MPU_INTBP_CFG_REG,0X90);     //INT Pin active low level, reset until 50us
-    MPU_Write_Byte(MPU_INT_EN_REG,0x40);       	//enable INT
-}
-
-
-/**************************************************************************/
-/*!
-    @brief  initialize the IIC bus
-
-    @param  NULL
-*/
-/**************************************************************************/
-void MPU_Bus_Init(void)
-{
-	CLK_ENABLE;
-	IICInit(&MPU_bus);
-}
-
-
-/**************************************************************************/
-/*!
-    @brief  init the MPU6050
-
-    @param  NULL
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Init(void)
-{ 
-	u8 res;
+	RCC_APB2PeriphClockCmd(RCC_MPU6050, ENABLE); // Ê¹ÄÜGPIOÊ±ÖÓ
 	
-	MPU_Bus_Init();
-	
-	MPU_Write_Byte(MPU_PWR_MGMT1_REG,0X80);	//å¤ä½MPU6050
-  delay_ms(100);
-	MPU_Write_Byte(MPU_PWR_MGMT1_REG,0X00);	//å”¤é†’MPU6050 
-	MPU_Set_Gyro_Fsr(3);										//Gä¼ æ„Ÿå™¨, 2000dps
-	MPU_Set_Accel_Fsr(2);										//Aä¼ æ„Ÿå™¨, 8g
-	MPU_Set_Rate(50);												//é‡‡æ ·ç‡50Hz
-	MPU_Write_Byte(MPU_INT_EN_REG,0X00);		//å…³é—­æ‰€æœ‰ä¸­æ–­
-	MPU_Write_Byte(MPU_USER_CTRL_REG,0X00);	//IICä¸»æ¨¡å¼å…³é—­
-	MPU_Write_Byte(MPU_FIFO_EN_REG,0X00);		//dis FIFO
-	MPU_Write_Byte(MPU_INTBP_CFG_REG,0X80);	//INT active low
-	
-	res=MPU_Read_Byte(MPU_DEVICE_ID_REG);
-	if(res==MPU_ADDR)//ID
-	{
-		MPU_Write_Byte(MPU_PWR_MGMT1_REG,0X28);	//SET the internal 8MHz,sleep=0,cycle=1,TEMP_DIS=1//low power modes
-		MPU_Write_Byte(MPU_PWR_MGMT2_REG,0X87);	//enable accelerometer,disanable gyroscope,set the wake up frequence=20Hz
-		MPU_Set_Rate(50);												//é‡‡æ ·ç‡50Hz
- 	}else return 1;
-	
-	MPU_Motion_Init();
-	MPU_INT_Pin_Init();
-	
-	
-	return 0;
+	GPIO_InitTypeDef  GPIO_InitStructure;
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_SDA|GPIO_SCL;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(PORT_MPU6050, &GPIO_InitStructure);
 }
 
-void MPU_Sleep()
+
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºIIC_Start
+ * º¯ Êı Ëµ Ã÷£ºIICÆğÊ¼Ê±Ğò
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£ºÎŞ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+void IIC_Start(void)
 {
-	MPU_Write_Byte(MPU_PWR_MGMT1_REG,0x48);//sleep=1,cycle=0,temp_dis=1,internal 8MHz
+        SDA_OUT();
+        SCL(1); 
+        SDA(0);
+        
+        SDA(1);
+        delay_us(5);
+        SDA(0);
+        delay_us(5);
+                       
+        SCL(0);
 }
-
-void MPU_Wakeup()
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºIIC_Stop
+ * º¯ Êı Ëµ Ã÷£ºIICÍ£Ö¹ĞÅºÅ
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£ºÎŞ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+void IIC_Stop(void)
 {
-	//low power modes
-	MPU_Write_Byte(MPU_PWR_MGMT1_REG,0x28);//sleep=0,cycle=1,temp_dis=1,internal 8MHz
+        SDA_OUT();
+        SCL(0);
+        SDA(0);
+        
+        SCL(1);
+        delay_us(5);
+        SDA(1);
+        delay_us(5);
+        
 }
 
-uint8_t MPU_Read_Status()
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºIIC_Send_Ack
+ * º¯ Êı Ëµ Ã÷£ºÖ÷»ú·¢ËÍÓ¦´ğ»òÕß·ÇÓ¦´ğĞÅºÅ
+ * º¯ Êı ĞÎ ²Î£º0·¢ËÍÓ¦´ğ  1·¢ËÍ·ÇÓ¦´ğ
+ * º¯ Êı ·µ »Ø£ºÎŞ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+void IIC_Send_Ack(unsigned char ack)
 {
-	return MPU_Read_Byte(MPU_INT_STA_REG);
+        SDA_OUT();
+        SCL(0);
+        SDA(0);
+        delay_us(5);
+        if(!ack) SDA(0);
+        else         SDA(1);
+        SCL(1);
+        delay_us(5);
+        SCL(0);
+        SDA(1);
 }
 
 
-/**************************************************************************/
-/*
-    @brief  è®¾ç½®MPU6050é™€èºä»ªä¼ æ„Ÿå™¨æ»¡é‡ç¨‹èŒƒå›´
-
-    @param  fsr:0,+250dps;1,500dps;2,+1000dps;3,+2000dps
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Set_Gyro_Fsr(u8 fsr)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºI2C_WaitAck
+ * º¯ Êı Ëµ Ã÷£ºµÈ´ı´Ó»úÓ¦´ğ
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£º0ÓĞÓ¦´ğ  1³¬Ê±ÎŞÓ¦´ğ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+unsigned char I2C_WaitAck(void)
 {
-	return MPU_Write_Byte(MPU_GYRO_CFG_REG,fsr<<3); 
+        
+        char ack = 0;
+        unsigned char ack_flag = 10;
+        SCL(0);
+        SDA(1);
+        SDA_IN();
+        
+        SCL(1);
+        while( (SDA_GET()==1) && ( ack_flag ) )
+        {
+                ack_flag--;
+                delay_us(5);
+        }
+        
+        if( ack_flag <= 0 )
+        {
+                IIC_Stop();
+                return 1;
+        }
+        else
+        {
+                SCL(0);
+                SDA_OUT();
+        }
+        return ack;
 }
 
-
-/**************************************************************************/
-/*
-    @brief  è®¾ç½®MPU6050çš„æ•°å­—ä½é€šæ»¤æ³¢å™¨
-
-    @param  fsr:ä½é€šæ»¤æ³¢å™¨é¢‘ç‡(Hz)
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Set_Accel_Fsr(u8 fsr)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºSend_Byte
+ * º¯ Êı Ëµ Ã÷£ºĞ´ÈëÒ»¸ö×Ö½Ú
+ * º¯ Êı ĞÎ ²Î£ºdatÒªĞ´ÈËµÄÊı¾İ
+ * º¯ Êı ·µ »Ø£ºÎŞ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+void Send_Byte(uint8_t dat)
 {
-	return MPU_Write_Byte(MPU_ACCEL_CFG_REG,fsr<<3);
+        int i = 0;
+        SDA_OUT();
+        SCL(0);//À­µÍÊ±ÖÓ¿ªÊ¼Êı¾İ´«Êä
+        
+        for( i = 0; i < 8; i++ )
+        {
+                SDA( (dat & 0x80) >> 7 );
+                delay_us(1);
+                SCL(1);
+                delay_us(5);
+                SCL(0);
+                delay_us(5);
+                dat<<=1;
+        }        
 }
 
-
-/**************************************************************************/
-/*
-    @brief  è®¾ç½®MPU6050çš„ä½é€šæ»¤æ³¢å™¨
-
-    @param  lpf: Hz
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Set_LPF(u16 lpf)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºRead_Byte
+ * º¯ Êı Ëµ Ã÷£ºIIC¶ÁÊ±Ğò
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£º¶Áµ½µÄÊı¾İ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+unsigned char Read_Byte(void)
 {
-	u8 data=0;
-	if(lpf>=188)data=1;
-	else if(lpf>=98)data=2;
-	else if(lpf>=42)data=3;
-	else if(lpf>=20)data=4;
-	else if(lpf>=10)data=5;
-	else data=6; 
-	return MPU_Write_Byte(MPU_CFG_REG,data);
+        unsigned char i,receive=0;
+        SDA_IN();//SDAÉèÖÃÎªÊäÈë
+    for(i=0;i<8;i++ )
+        {
+        SCL(0);
+        delay_us(5);
+        SCL(1);
+        delay_us(5);
+        receive<<=1;
+        if( SDA_GET() )
+        {        
+            receive|=1;   
+        }
+        delay_us(5); 
+    }                                         
+        SCL(0); 
+  return receive;
 }
 
-
-/**************************************************************************/
-/*
-    @brief  è®¾ç½®MPU6050çš„é‡‡æ ·ç‡
-
-    @param  rate: 4~1000 Hz
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Set_Rate(u16 rate)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050_WriteReg
+ * º¯ Êı Ëµ Ã÷£ºIICÁ¬ĞøĞ´ÈëÊı¾İ
+ * º¯ Êı ĞÎ ²Î£ºaddrÆ÷¼şµØÖ· regaddr¼Ä´æÆ÷µØÖ· numÒªĞ´ÈëµÄ³¤¶È regdataĞ´ÈëµÄÊı¾İµØÖ·
+ * º¯ Êı ·µ »Ø£º0=¶ÁÈ¡³É¹¦   ÆäËû=¶ÁÈ¡Ê§°Ü
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+char MPU6050_WriteReg(uint8_t addr,uint8_t regaddr,uint8_t num,uint8_t *regdata)
 {
-	u8 data;
-	if(rate>1000)rate=1000;
-	if(rate<4)rate=4;
-	data=1000/rate-1;
-	data=MPU_Write_Byte(MPU_SAMPLE_RATE_REG,data);
- 	return MPU_Set_LPF(rate/2);
+    uint16_t i = 0;
+        IIC_Start();
+        Send_Byte((addr<<1)|0);
+        if( I2C_WaitAck() == 1 ) {IIC_Stop();return 1;}
+        Send_Byte(regaddr);
+        if( I2C_WaitAck() == 1 ) {IIC_Stop();return 2;}
+    
+        for(i=0;i<num;i++)
+    {
+        Send_Byte(regdata[i]);
+        if( I2C_WaitAck() == 1 ) {IIC_Stop();return (3+i);}
+    }        
+        IIC_Stop();
+    return 0;
 }
 
-/**************************************************************************/
-/*
-    @brief  è·å–MPU6050æ¸©åº¦å€¼
 
-    @param  NULL
-
-    @return temperature (short)
-*/
-/**************************************************************************/
-short MPU_Get_Temperature(void)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050_ReadData
+ * º¯ Êı Ëµ Ã÷£ºIICÁ¬Ğø¶ÁÈ¡Êı¾İ
+ * º¯ Êı ĞÎ ²Î£ºaddrÆ÷¼şµØÖ· regaddr¼Ä´æÆ÷µØÖ· numÒª¶ÁÈ¡µÄ³¤¶È Read¶ÁÈ¡µ½µÄÊı¾İÒª´æ´¢µÄµØÖ·
+ * º¯ Êı ·µ »Ø£º0=¶ÁÈ¡³É¹¦   ÆäËû=¶ÁÈ¡Ê§°Ü 
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+char MPU6050_ReadData(uint8_t addr, uint8_t regaddr,uint8_t num,uint8_t* Read)
 {
-    u8 buf[2]; 
-    short raw;
-		float temp;
-		MPU_Read_Len(MPU_ADDR,MPU_TEMP_OUTH_REG,2,buf); 
-    raw=((u16)buf[0]<<8)|buf[1];  
-    temp=36.53+((double)raw)/340;  
-    return temp*100;;
+        uint8_t i;
+        IIC_Start();
+        Send_Byte((addr<<1)|0);
+        if( I2C_WaitAck() == 1 ) {IIC_Stop();return 1;}
+        Send_Byte(regaddr);
+        if( I2C_WaitAck() == 1 ) {IIC_Stop();return 2;}
+        
+        IIC_Start();
+        Send_Byte((addr<<1)|1);
+        if( I2C_WaitAck() == 1 ) {IIC_Stop();return 3;}
+        
+        for(i=0;i<(num-1);i++){
+                Read[i]=Read_Byte();
+                IIC_Send_Ack(0);
+        }
+        Read[i]=Read_Byte();
+        IIC_Send_Ack(1);         
+        IIC_Stop();
+        return 0;
 }
 
 
-/**************************************************************************/
-/*
-    @brief  è·å–MPU6050é™€èºä»ªåŸå§‹å€¼
-
-    @param  NULL
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Get_Gyroscope(short *gx,short *gy,short *gz)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU_Set_Gyro_Fsr
+ * º¯ Êı Ëµ Ã÷£ºÉèÖÃMPU6050ÍÓÂİÒÇ´«¸ĞÆ÷ÂúÁ¿³Ì·¶Î§
+ * º¯ Êı ĞÎ ²Î£ºfsr:0,¡À250dps;1,¡À500dps;2,¡À1000dps;3,¡À2000dps
+ * º¯ Êı ·µ »Ø£º0,ÉèÖÃ³É¹¦  ÆäËû,ÉèÖÃÊ§°Ü
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+uint8_t MPU_Set_Gyro_Fsr(uint8_t fsr)
 {
-    u8 buf[6],res;  
-		res=MPU_Read_Len(MPU_ADDR,MPU_GYRO_XOUTH_REG,6,buf);
-		if(res==0)
-		{
-			*gx=((u16)buf[0]<<8)|buf[1];  
-			*gy=((u16)buf[2]<<8)|buf[3];  
-			*gz=((u16)buf[4]<<8)|buf[5];
-		} 	
-    return res;;
-}
+        return MPU6050_WriteReg(0x68,MPU_GYRO_CFG_REG,1,(uint8_t*)(fsr<<3)); //ÉèÖÃÍÓÂİÒÇÂúÁ¿³Ì·¶Î§
+}    
 
-
-/**************************************************************************/
-/*
-    @brief  è·å–MPU6050åŠ é€Ÿåº¦åŸå§‹å€¼
-
-    @param  NULL
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Get_Accelerometer(short *ax,short *ay,short *az)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU_Set_Accel_Fsr
+ * º¯ Êı Ëµ Ã÷£ºÉèÖÃMPU6050¼ÓËÙ¶È´«¸ĞÆ÷ÂúÁ¿³Ì·¶Î§
+ * º¯ Êı ĞÎ ²Î£ºfsr:0,¡À2g;1,¡À4g;2,¡À8g;3,¡À16g
+ * º¯ Êı ·µ »Ø£º0,ÉèÖÃ³É¹¦  ÆäËû,ÉèÖÃÊ§°Ü
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+uint8_t MPU_Set_Accel_Fsr(uint8_t fsr)
 {
-    u8 buf[6],res;  
-		res=MPU_Read_Len(MPU_ADDR,MPU_ACCEL_XOUTH_REG,6,buf);
-		if(res==0)
-		{
-			*ax=((u16)buf[0]<<8)|buf[1];  
-			*ay=((u16)buf[2]<<8)|buf[3];  
-			*az=((u16)buf[4]<<8)|buf[5];
-		} 	
-    return res;;
+        return MPU6050_WriteReg(0x68,MPU_ACCEL_CFG_REG,1,(uint8_t*)(fsr<<3)); //ÉèÖÃ¼ÓËÙ¶È´«¸ĞÆ÷ÂúÁ¿³Ì·¶Î§  
 }
 
-/**************************************************************************/
-/*
-    @brief  IICè¿ç»­å†™
-
-    @param  addr:å™¨ä»¶åœ°å€
-    @param  reg:å¯„å­˜å™¨åœ°å€
-	@param  len:å†™å…¥é•¿åº¦
-	@param  buf:æ•°æ®åŒº
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Write_Len(u8 addr,u8 reg,u8 len,u8 *buf)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU_Set_LPF
+ * º¯ Êı Ëµ Ã÷£ºÉèÖÃMPU6050µÄÊı×ÖµÍÍ¨ÂË²¨Æ÷
+ * º¯ Êı ĞÎ ²Î£ºlpf:Êı×ÖµÍÍ¨ÂË²¨ÆµÂÊ(Hz)
+ * º¯ Êı ·µ »Ø£º0,ÉèÖÃ³É¹¦  ÆäËû,ÉèÖÃÊ§°Ü
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+uint8_t MPU_Set_LPF(uint16_t lpf)
 {
-	u8 i; 
-  IICStart(&MPU_bus); 
-	IICSendByte(&MPU_bus,(addr<<1)|0);
-	if(IICWaitAck(&MPU_bus))	
-	{
-		IICStop(&MPU_bus);		 
-		return 1;		
-	}
-    IICSendByte(&MPU_bus,reg);	
-    IICWaitAck(&MPU_bus);		
-	for(i=0;i<len;i++)
-	{
-		IICSendByte(&MPU_bus,buf[i]);	
-		if(IICWaitAck(&MPU_bus))		
-		{
-			IICStop(&MPU_bus);	 
-			return 1;		 
-		}		
-	}    
-    IICStop(&MPU_bus);	 
-	return 0;	
-} 
-
-/**************************************************************************/
-/*
-    @brief  IICå†™å•å­—èŠ‚
-
-    @param  reg:å¯„å­˜å™¨åœ°å€
-	@param  data:æ•°æ®(uint8_t)
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Write_Byte(u8 reg,u8 data) 				 
-{ 
-  IICStart(&MPU_bus); 
-	IICSendByte(&MPU_bus, (MPU_ADDR<<1)|0);
-	if(IICWaitAck(&MPU_bus))	
-	{
-		IICStop(&MPU_bus);		 
-		return 1;		
-	}
-	IICSendByte(&MPU_bus,reg);	
-	IICWaitAck(&MPU_bus);		
-	IICSendByte(&MPU_bus,data);
-	if(IICWaitAck(&MPU_bus))	
-	{
-		IICStop(&MPU_bus);	 
-		return 1;		 
-	}		 
-  IICStop(&MPU_bus);	 
-	return 0;
+        uint8_t data=0;
+        
+        if(lpf>=188)data=1;
+        else if(lpf>=98)data=2;
+        else if(lpf>=42)data=3;
+        else if(lpf>=20)data=4;
+        else if(lpf>=10)data=5;
+        else data=6; 
+    return data=MPU6050_WriteReg(0x68,MPU_CFG_REG,1,&data);//ÉèÖÃÊı×ÖµÍÍ¨ÂË²¨Æ÷  
 }
-
-
-/**************************************************************************/
-/*
-    @brief  IICè¯»å•å­—èŠ‚
-
-    @param  reg:å¯„å­˜å™¨åœ°å€
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Read_Byte(u8 reg)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU_Set_Rate
+ * º¯ Êı Ëµ Ã÷£ºÉèÖÃMPU6050µÄ²ÉÑùÂÊ(¼Ù¶¨Fs=1KHz)
+ * º¯ Êı ĞÎ ²Î£ºrate:4~1000(Hz)  ³õÊ¼»¯ÖĞrateÈ¡50
+ * º¯ Êı ·µ »Ø£º0,ÉèÖÃ³É¹¦  ÆäËû,ÉèÖÃÊ§°Ü
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+uint8_t MPU_Set_Rate(uint16_t rate)
 {
-	u8 res;
-  IICStart(&MPU_bus); 
-	IICSendByte(&MPU_bus,(MPU_ADDR<<1)|0);
-	IICWaitAck(&MPU_bus);		
-  IICSendByte(&MPU_bus,reg);	
-  IICWaitAck(&MPU_bus);		
-  IICStart(&MPU_bus);
-	IICSendByte(&MPU_bus,(MPU_ADDR<<1)|1);
-  IICWaitAck(&MPU_bus);		
-	res=IICReceiveByte(&MPU_bus);
-	IICSendNotAck(&MPU_bus);
-  IICStop(&MPU_bus);			
-	return res;		
+        uint8_t data;
+        if(rate>1000)rate=1000;
+        if(rate<4)rate=4;
+        data=1000/rate-1;
+        data=MPU6050_WriteReg(0x68,MPU_SAMPLE_RATE_REG,1,&data);        //ÉèÖÃÊı×ÖµÍÍ¨ÂË²¨Æ÷
+         return MPU_Set_LPF(rate/2);            //×Ô¶¯ÉèÖÃLPFÎª²ÉÑùÂÊµÄÒ»°ë
 }
 
 
-/**************************************************************************/
-/*
-    @brief  IICè¿ç»­è¯»
-
-    @param  addr:å™¨ä»¶åœ°å€
-    @param  reg:å¯„å­˜å™¨åœ°å€
-	@param  len:å†™å…¥é•¿åº¦
-	@param  buf:æ•°æ®åŒº
-
-    @return 0 if success
-*/
-/**************************************************************************/
-u8 MPU_Read_Len(u8 addr,u8 reg,u8 len,u8 *buf)
-{ 
- 	IICStart(&MPU_bus); 
-	IICSendByte(&MPU_bus,(addr<<1)|0);
-	if(IICWaitAck(&MPU_bus))	
-	{
-		IICStop(&MPU_bus);		 
-		return 1;		
-	}
-    IICSendByte(&MPU_bus,reg);	
-    IICWaitAck(&MPU_bus);		
-    IICStart(&MPU_bus);
-		IICSendByte(&MPU_bus,(addr<<1)|1);
-    IICWaitAck(&MPU_bus);		
-		while(len)
-		{
-			if(len==1)
-			{
-				*buf=IICReceiveByte(&MPU_bus);
-				IICSendNotAck(&MPU_bus);
-			}
-			else 
-			{
-				*buf=IICReceiveByte(&MPU_bus);	
-				IICSendAck(&MPU_bus);
-			}				
-			len--;
-			buf++; 
-		}    
-    IICStop(&MPU_bus);
-		return 0;	
-}
-
-uint8_t MPU_Write_Multi_Byte(uint8_t addr,uint8_t length,uint8_t buff[])
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050ReadGyro
+ * º¯ Êı Ëµ Ã÷£º¶ÁÈ¡ÍÓÂİÒÇÊı¾İ
+ * º¯ Êı ĞÎ ²Î£ºÍÓÂİÒÇÊı¾İ´æ´¢µØÖ· 
+ * º¯ Êı ·µ »Ø£ºÎŞ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+void MPU6050ReadGyro(short *gyroData)
 {
-	if(IIC_Write_Multi_Byte(&MPU_bus,MPU_ADDR<<1,addr,length,buff))
-	{
-		return 1;
-	}
-	return 0;
+        uint8_t buf[6];
+        uint8_t reg = 0;
+        //MPU6050_GYRO_OUT = MPU6050ÍÓÂİÒÇÊı¾İ¼Ä´æÆ÷µØÖ·
+        //ÍÓÂİÒÇÊı¾İÊä³ö¼Ä´æÆ÷×Ü¹²ÓÉ6¸ö¼Ä´æÆ÷×é³É£¬
+        //Êä³öX/Y/ZÈı¸öÖáµÄÍÓÂİÒÇ´«¸ĞÆ÷Êı¾İ£¬¸ß×Ö½ÚÔÚÇ°£¬µÍ×Ö½ÚÔÚºó¡£
+        //Ã¿Ò»¸öÖá16Î»£¬°´Ë³ĞòÎªxyz
+        reg = MPU6050_ReadData(0x68,MPU6050_GYRO_OUT,6,buf);
+        if( reg == 0 )
+        {
+                gyroData[0] = (buf[0] << 8) | buf[1];
+                gyroData[1] = (buf[2] << 8) | buf[3];
+                gyroData[2] = (buf[4] << 8) | buf[5];
+        }
 }
 
-uint8_t MPU_Read_Multi_Byte(uint8_t addr, uint8_t length, uint8_t buff[])
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050ReadAcc
+ * º¯ Êı Ëµ Ã÷£º¶ÁÈ¡¼ÓËÙ¶ÈÊı¾İ
+ * º¯ Êı ĞÎ ²Î£º¼ÓËÙ¶ÈÊı¾İ´æ´¢µØÖ· 
+ * º¯ Êı ·µ »Ø£ºÎŞ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+void MPU6050ReadAcc(short *accData)
 {
-	if(IIC_Read_Multi_Byte(&MPU_bus, MPU_ADDR<<1, addr, length, buff))
-	{
-		return 1;
-	}
-	return 0;
+        uint8_t buf[6];
+        uint8_t reg = 0;
+        //MPU6050_ACC_OUT = MPU6050¼ÓËÙ¶ÈÊı¾İ¼Ä´æÆ÷µØÖ·
+        //¼ÓËÙ¶È´«¸ĞÆ÷Êı¾İÊä³ö¼Ä´æÆ÷×Ü¹²ÓÉ6¸ö¼Ä´æÆ÷×é³É£¬
+        //Êä³öX/Y/ZÈı¸öÖáµÄ¼ÓËÙ¶È´«¸ĞÆ÷Öµ£¬¸ß×Ö½ÚÔÚÇ°£¬µÍ×Ö½ÚÔÚºó¡£
+        reg = MPU6050_ReadData(0x68, MPU6050_ACC_OUT, 6, buf);
+        if( reg == 0)
+        {
+                accData[0] = (buf[0] << 8) | buf[1];
+                accData[1] = (buf[2] << 8) | buf[3];
+                accData[2] = (buf[4] << 8) | buf[5];
+        }
 }
 
-
-/**************************************************************************/
-/*
-    @brief  get the roll and pitch
-
-    @param  roll:roll(float)
-    @param  pitch:pitch(float)
-
-    @return NULL
-*/
-/**************************************************************************/
-void MPU_Get_Angles(float * roll,float * pitch)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050_GetTemp
+ * º¯ Êı Ëµ Ã÷£º¶ÁÈ¡MPU6050ÉÏµÄÎÂ¶È
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£ºÎÂ¶ÈÖµµ¥Î»Îª¡æ
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎÂ¶È»»Ëã¹«Ê½Îª£ºTemperature = 36.53 + regval/340
+******************************************************************/
+float MPU6050_GetTemp(void)
 {
-	short ax,ay,az;
-	MPU_Get_Accelerometer(&ax,&ay,&az);
-	*pitch = -atanf(ax/sqrtf(ay*ay+az*az));
-	*roll = atanf((float)ay/(float)az);
+        short temp3;
+        uint8_t buf[2];
+        float Temperature = 0;
+        MPU6050_ReadData(0x68,MPU6050_RA_TEMP_OUT_H,2,buf); 
+    temp3= (buf[0] << 8) | buf[1];        
+        Temperature=((double) temp3/340.0)+36.53;
+    return Temperature;
 }
 
-
-/**************************************************************************/
-/*
-    @brief  check the MPU6050 is horizontal or not
-
-    @param  NULL
-
-    @return 1 if is horizontal
-*/
-/**************************************************************************/
-uint8_t MPU_isHorizontal(void)
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050ReadID
+ * º¯ Êı Ëµ Ã÷£º¶ÁÈ¡MPU6050µÄÆ÷¼şµØÖ·
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£º0=¼ì²â²»µ½MPU6050   1=ÄÜ¼ì²âµ½MPU6050
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+uint8_t MPU6050ReadID(void)
 {
-	float roll,pitch;
-	MPU_Get_Angles(&roll,&pitch);
-	if(roll<=0.50 && roll>=-0.50 && pitch<=0.50 && pitch>=-0.50)
-	{return 1;}
-	return 0;
+        unsigned char Re[2] = {0};
+        //Æ÷¼şID¼Ä´æÆ÷ = 0x75
+        printf("mpu=%d\r\n",MPU6050_ReadData(0x68,0X75,1,Re)); //¶ÁÆ÷¼şµØÖ·
+        
+        if (Re[0] != 0x68) 
+        {
+                printf("¼ì²â²»µ½ MPU6050 Ä£¿é");
+                return 1;
+         } 
+        else
+        {
+                printf("MPU6050 ID = %x\r\n",Re[0]);
+                return 0;
+        }
+        return 0;
+}
+
+/******************************************************************
+ * º¯ Êı Ãû ³Æ£ºMPU6050_Init
+ * º¯ Êı Ëµ Ã÷£ºMPU6050³õÊ¼»¯
+ * º¯ Êı ĞÎ ²Î£ºÎŞ
+ * º¯ Êı ·µ »Ø£º0³É¹¦  1Ã»ÓĞ¼ì²âµ½MPU6050
+ * ×÷       Õß£ºLC
+ * ±¸       ×¢£ºÎŞ
+******************************************************************/
+char MPU6050_Init(void)
+{
+    MPU6050_GPIO_Init();
+    delay_ms(10);
+    //¸´Î»6050
+    MPU6050_WriteReg(0x68,MPU6050_RA_PWR_MGMT_1, 1,(uint8_t*)(0x80));
+    delay_ms(100);
+    //µçÔ´¹ÜÀí¼Ä´æÆ÷
+    //Ñ¡ÔñXÖáÍÓÂİ×÷Îª²Î¿¼PLLµÄÊ±ÖÓÔ´£¬ÉèÖÃCLKSEL=001
+    MPU6050_WriteReg(0x68,MPU6050_RA_PWR_MGMT_1,1, (uint8_t*)(0x00));
+    
+    MPU_Set_Gyro_Fsr(3);    //ÍÓÂİÒÇ´«¸ĞÆ÷,¡À2000dps
+    MPU_Set_Accel_Fsr(0);   //¼ÓËÙ¶È´«¸ĞÆ÷,¡À2g
+    MPU_Set_Rate(50);                
+
+    MPU6050_WriteReg(0x68,MPU_INT_EN_REG , 1,(uint8_t*)0x00);        //¹Ø±ÕËùÓĞÖĞ¶Ï
+    MPU6050_WriteReg(0x68,MPU_USER_CTRL_REG,1,(uint8_t*)0x00);        //I2CÖ÷Ä£Ê½¹Ø±Õ
+    MPU6050_WriteReg(0x68,MPU_FIFO_EN_REG,1,(uint8_t*)0x00);                //¹Ø±ÕFIFO
+    MPU6050_WriteReg(0x68,MPU_INTBP_CFG_REG,1,(uint8_t*)0X80);        //INTÒı½ÅµÍµçÆ½ÓĞĞ§
+      
+    if( MPU6050ReadID() == 0 )//¼ì²éÊÇ·ñÓĞ6050
+    {       
+            MPU6050_WriteReg(0x68,MPU6050_RA_PWR_MGMT_1, 1,(uint8_t*)0x01);//ÉèÖÃCLKSEL,PLL XÖáÎª²Î¿¼
+            MPU6050_WriteReg(0x68,MPU_PWR_MGMT2_REG, 1,(uint8_t*)0x00);//¼ÓËÙ¶ÈÓëÍÓÂİÒÇ¶¼¹¤×÷
+            MPU_Set_Rate(50);        
+            return 1;
+    }
+    return 0;
 }
 
