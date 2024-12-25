@@ -1,0 +1,220 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    08/17/2021  18:54:01  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+D:\PROGRAM FILES (X86)\C51\BIN\BL51.EXE MAIN.obj, RC522.obj TO TEST522 RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  MAIN.obj (MAIN)
+  RC522.obj (RC522)
+  D:\PROGRAM FILES (X86)\C51\LIB\C51S.LIB (?C_STARTUP)
+  D:\PROGRAM FILES (X86)\C51\LIB\C51S.LIB (?C?COPY)
+  D:\PROGRAM FILES (X86)\C51\LIB\C51S.LIB (?C?CLDOPTR)
+  D:\PROGRAM FILES (X86)\C51\LIB\C51S.LIB (?C?CSTPTR)
+  D:\PROGRAM FILES (X86)\C51\LIB\C51S.LIB (?C?CSTOPTR)
+  D:\PROGRAM FILES (X86)\C51\LIB\C51S.LIB (?C?ISTPTR)
+
+
+LINK MAP OF MODULE:  TEST522 (MAIN)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            REG     0008H     0008H     ABSOLUTE     "REG BANK 1"
+                    0010H     0010H                  *** GAP ***
+            BIT     0020H.0   0000H.1   UNIT         ?BI?MAIN
+                    0020H.1   0000H.7                *** GAP ***
+            DATA    0021H     0030H     UNIT         _DATA_GROUP_
+            DATA    0051H     0028H     UNIT         ?DT?MAIN
+            IDATA   0079H     0022H     UNIT         ?ID?MAIN
+            IDATA   009BH     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0012H     UNIT         ?PR?_CLEARBITMASK?RC522
+            CODE    0015H     000DH     UNIT         ?PR?_SETBITMASK?RC522
+                    0022H     0001H                  *** GAP ***
+            CODE    0023H     0003H     ABSOLUTE     
+            CODE    0026H     0194H     UNIT         ?PR?_PCDCOMMF522?RC522
+            CODE    01BAH     0176H     UNIT         ?C?LIB_CODE
+            CODE    0330H     0137H     UNIT         ?PR?ICCARDCODE?MAIN
+            CODE    0467H     0116H     UNIT         ?PR?_PCDVALUE?RC522
+            CODE    057DH     00D3H     UNIT         ?PR?_PCDWRITE?RC522
+            CODE    0650H     009FH     UNIT         ?PR?MAIN?MAIN
+            CODE    06EFH     0092H     UNIT         ?PR?_PCDBAKVALUE?RC522
+            CODE    0781H     008AH     UNIT         ?PR?_PCDAUTHSTATE?RC522
+            CODE    080BH     0088H     UNIT         ?PR?_PCDSELECT?RC522
+            CODE    0893H     0087H     UNIT         ?PR?_PCDANTICOLL?RC522
+            CODE    091AH     0087H     UNIT         ?PR?_CALULATECRC?RC522
+            CODE    09A1H     0081H     UNIT         ?PR?ISR_UART?MAIN
+            CODE    0A22H     006FH     UNIT         ?PR?_PCDREAD?RC522
+            CODE    0A91H     0064H     UNIT         ?PR?_PCDREQUEST?RC522
+            CODE    0AF5H     005CH     UNIT         ?PR?INITIALIZESYSTEM?MAIN
+            CODE    0B51H     005CH     UNIT         ?PR?_READRAWRC?RC522
+            CODE    0BADH     005BH     UNIT         ?PR?_WRITERAWRC?RC522
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/17/2021  18:54:01  PAGE 2
+
+
+            CODE    0C08H     0052H     UNIT         ?PR?_M500PCDCONFIGISOTYPE?RC522
+            CODE    0C5AH     003EH     UNIT         ?PR?PCDRESET?RC522
+            CODE    0C98H     003DH     UNIT         ?PR?PCDHALT?RC522
+            CODE    0CD5H     0022H     UNIT         ?PR?_DELAY_10MS?RC522
+            CODE    0CF7H     0012H     UNIT         ?PR?PCDANTENNAON?RC522
+            CODE    0D09H     000CH     UNIT         ?C_C51STARTUP
+            CODE    0D15H     000AH     UNIT         ?CO?MAIN
+            CODE    0D1FH     0007H     UNIT         ?PR?PCDANTENNAOFF?RC522
+
+
+
+OVERLAY MAP OF MODULE:   TEST522 (MAIN)
+
+
+SEGMENT                                   DATA_GROUP 
+  +--> CALLED SEGMENT                   START    LENGTH
+-------------------------------------------------------
+?C_C51STARTUP                           -----    -----
+  +--> ?PR?MAIN?MAIN
+
+?PR?MAIN?MAIN                           0021H    0001H
+  +--> ?PR?INITIALIZESYSTEM?MAIN
+  +--> ?PR?_DELAY_10MS?RC522
+  +--> ?PR?ICCARDCODE?MAIN
+
+?PR?INITIALIZESYSTEM?MAIN               -----    -----
+  +--> ?PR?PCDRESET?RC522
+  +--> ?PR?PCDANTENNAOFF?RC522
+  +--> ?PR?PCDANTENNAON?RC522
+  +--> ?PR?_M500PCDCONFIGISOTYPE?RC522
+  +--> ?PR?_DELAY_10MS?RC522
+
+?PR?PCDRESET?RC522                      -----    -----
+  +--> ?PR?_WRITERAWRC?RC522
+
+?PR?PCDANTENNAOFF?RC522                 -----    -----
+  +--> ?PR?_CLEARBITMASK?RC522
+
+?PR?_CLEARBITMASK?RC522                 -----    -----
+  +--> ?PR?_READRAWRC?RC522
+  +--> ?PR?_WRITERAWRC?RC522
+
+?PR?PCDANTENNAON?RC522                  -----    -----
+  +--> ?PR?_READRAWRC?RC522
+  +--> ?PR?_SETBITMASK?RC522
+
+?PR?_SETBITMASK?RC522                   -----    -----
+  +--> ?PR?_READRAWRC?RC522
+  +--> ?PR?_WRITERAWRC?RC522
+
+?PR?_M500PCDCONFIGISOTYPE?RC522         -----    -----
+  +--> ?PR?_CLEARBITMASK?RC522
+  +--> ?PR?_WRITERAWRC?RC522
+  +--> ?PR?_DELAY_10MS?RC522
+  +--> ?PR?PCDANTENNAON?RC522
+
+?PR?ICCARDCODE?MAIN                     0022H    0001H
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/17/2021  18:54:01  PAGE 3
+
+
+  +--> ?PR?PCDHALT?RC522
+  +--> ?PR?_PCDREQUEST?RC522
+  +--> ?PR?_PCDANTICOLL?RC522
+  +--> ?PR?_PCDSELECT?RC522
+  +--> ?CO?MAIN
+  +--> ?PR?_PCDAUTHSTATE?RC522
+  +--> ?PR?_PCDREAD?RC522
+  +--> ?PR?_PCDWRITE?RC522
+  +--> ?PR?_PCDVALUE?RC522
+  +--> ?PR?_PCDBAKVALUE?RC522
+
+?PR?PCDHALT?RC522                       0023H    0015H
+  +--> ?PR?_CALULATECRC?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+
+?PR?_CALULATECRC?RC522                  003BH    0008H
+  +--> ?PR?_CLEARBITMASK?RC522
+  +--> ?PR?_WRITERAWRC?RC522
+  +--> ?PR?_SETBITMASK?RC522
+  +--> ?PR?_READRAWRC?RC522
+
+?PR?_PCDCOMMF522?RC522                  0040H    0011H
+  +--> ?PR?_WRITERAWRC?RC522
+  +--> ?PR?_CLEARBITMASK?RC522
+  +--> ?PR?_SETBITMASK?RC522
+  +--> ?PR?_READRAWRC?RC522
+
+?PR?_PCDREQUEST?RC522                   0023H    0018H
+  +--> ?PR?_CLEARBITMASK?RC522
+  +--> ?PR?_WRITERAWRC?RC522
+  +--> ?PR?_SETBITMASK?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+
+?PR?_PCDANTICOLL?RC522                  0023H    0019H
+  +--> ?PR?_CLEARBITMASK?RC522
+  +--> ?PR?_WRITERAWRC?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+  +--> ?PR?_SETBITMASK?RC522
+
+?PR?_PCDSELECT?RC522                    0023H    0017H
+  +--> ?PR?_CALULATECRC?RC522
+  +--> ?PR?_CLEARBITMASK?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+
+?PR?_PCDAUTHSTATE?RC522                 0023H    001DH
+  +--> ?PR?_PCDCOMMF522?RC522
+  +--> ?PR?_READRAWRC?RC522
+
+?PR?_PCDREAD?RC522                      0023H    0017H
+  +--> ?PR?_CALULATECRC?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+
+?PR?_PCDWRITE?RC522                     0023H    0017H
+  +--> ?PR?_CALULATECRC?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+
+?PR?_PCDVALUE?RC522                     0023H    0018H
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/17/2021  18:54:01  PAGE 4
+
+
+  +--> ?PR?_CALULATECRC?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+
+?PR?_PCDBAKVALUE?RC522                  0023H    0015H
+  +--> ?PR?_CALULATECRC?RC522
+  +--> ?PR?_PCDCOMMF522?RC522
+
+
+
+SYMBOL TABLE OF MODULE:  TEST522 (MAIN)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        ?C?COPY
+  C:028AH         PUBLIC        ?C?COPY
+  -------         ENDMOD        ?C?COPY
+
+  -------         MODULE        ?C?CLDOPTR
+  C:02B0H         PUBLIC        ?C?CLDOPTR
+  -------         ENDMOD        ?C?CLDOPTR
+
+  -------         MODULE        ?C?CSTPTR
+  C:02DDH         PUBLIC        ?C?CSTPTR
+  -------         ENDMOD        ?C?CSTPTR
+
+  -------         MODULE        ?C?CSTOPTR
+  C:02EFH         PUBLIC        ?C?CSTOPTR
+  -------         ENDMOD        ?C?CSTOPTR
+
+  -------         MODULE        ?C?ISTPTR
+  C:0311H         PUBLIC        ?C?ISTPTR
+  -------         ENDMOD        ?C?ISTPTR
+
+Program Size: data=139.1 xdata=0 code=3365
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)
