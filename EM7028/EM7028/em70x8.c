@@ -1,28 +1,25 @@
 #include "em70x8.h"
 
 #define CLK_ENABLE __HAL_RCC_GPIOB_CLK_ENABLE();
-iic_bus_t EM7028_bus = 
-{
+iic_bus_t EM7028_bus = {
 	.IIC_SDA_PORT = GPIOB,
 	.IIC_SCL_PORT = GPIOB,
 	.IIC_SDA_PIN  = GPIO_PIN_13,
 	.IIC_SCL_PIN  = GPIO_PIN_14,
 };
 
-uint8_t  EM7028_ReadOneReg(unsigned char RegAddr)
-{
+uint8_t  EM7028_ReadOneReg(unsigned char RegAddr){
 	unsigned char dat;
 	dat = IIC_Read_One_Byte(&EM7028_bus, EM7028_ADDR, RegAddr);
 	return dat;
 }
 
-void  EM7028_WriteOneReg(unsigned char RegAddr, unsigned char dat)
-{
+void  EM7028_WriteOneReg(unsigned char RegAddr, unsigned char dat){
 	IIC_Write_One_Byte(&EM7028_bus, EM7028_ADDR, RegAddr, dat);
 }
 
-uint8_t EM7028_Get_ID()
-{
+// 获取芯片的 PID（产品ID）
+uint8_t EM7028_Get_ID(){
 	return EM7028_ReadOneReg(ID_REG);
 }
 
