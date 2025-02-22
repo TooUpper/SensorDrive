@@ -237,8 +237,8 @@ I (..\Firmware\inc\stm32f10x_tim.h)(0x67AC4356)
 I (..\Firmware\inc\stm32f10x_wwdg.h)(0x67AC4356)
 I (..\Firmware\inc\misc.h)(0x67AC4355)
 I (D:\Tools\IDE\keil\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5E8E3CC2)
-F (..\Drivers\adc1\adc1.c)(0x67B74B1C)(--c99 --gnu -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ..\CMSIS -I ..\User -I ..\Firmware\inc -I ..\Drivers\uart1 -I ..\Drivers\adc1-ID:\Tools\IDE\keil\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="541" -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\adc1.o --omf_browse .\objects\adc1.crf --depend .\objects\adc1.d)
-I (..\Drivers\adc1\adc1.h)(0x67B74AF2)
+F (..\Drivers\adc1\adc1.c)(0x67B9C674)(--c99 --gnu -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ..\CMSIS -I ..\User -I ..\Firmware\inc -I ..\Drivers\uart1 -I ..\Drivers\adc1-ID:\Tools\IDE\keil\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="541" -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\adc1.o --omf_browse .\objects\adc1.crf --depend .\objects\adc1.d)
+I (..\Drivers\adc1\adc1.h)(0x67B9C64B)
 I (..\Firmware\inc\stm32f10x_gpio.h)(0x67AC4356)
 I (..\CMSIS\stm32f10x.h)(0x67AC4354)
 I (..\CMSIS\core_cm3.h)(0x67AC4354)
@@ -267,7 +267,7 @@ I (..\Firmware\inc\stm32f10x_tim.h)(0x67AC4356)
 I (..\Firmware\inc\stm32f10x_usart.h)(0x67AC4356)
 I (..\Firmware\inc\stm32f10x_wwdg.h)(0x67AC4356)
 I (..\Firmware\inc\misc.h)(0x67AC4355)
-F (..\User\main.c)(0x67B74B89)(--c99 --gnu -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ..\CMSIS -I ..\User -I ..\Firmware\inc -I ..\Drivers\uart1 -I ..\Drivers\adc1-ID:\Tools\IDE\keil\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="541" -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
+F (..\User\main.c)(0x67B9BF17)(--c99 --gnu -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ..\CMSIS -I ..\User -I ..\Firmware\inc -I ..\Drivers\uart1 -I ..\Drivers\adc1-ID:\Tools\IDE\keil\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="541" -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
 I (..\CMSIS\stm32f10x.h)(0x67AC4354)
 I (..\CMSIS\core_cm3.h)(0x67AC4354)
 I (D:\Tools\IDE\keil\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5E8E3CC2)
@@ -300,7 +300,7 @@ I (..\User\systick.h)(0x65A4D76D)
 I (..\User\main.h)(0x65A4D76D)
 I (..\Drivers\uart1\uart1.h)(0x67B1D9A4)
 I (D:\Tools\IDE\keil\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5E8E3CC2)
-I (..\Drivers\adc1\adc1.h)(0x67B74AF2)
+I (..\Drivers\adc1\adc1.h)(0x67B9C64B)
 F (..\User\systick.c)(0x67AF353F)(--c99 --gnu -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ..\CMSIS -I ..\User -I ..\Firmware\inc -I ..\Drivers\uart1 -I ..\Drivers\adc1-ID:\Tools\IDE\keil\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="541" -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\systick.o --omf_browse .\objects\systick.crf --depend .\objects\systick.d)
 I (..\CMSIS\stm32f10x.h)(0x67AC4354)
 I (..\CMSIS\core_cm3.h)(0x67AC4354)
